@@ -1,60 +1,53 @@
-const wrapper = document.getElementById('tiles');
+/* -- Carousel Navigation -- */
 
-let columns = 0,
-  rows = 0,
-  toggled = false;
+let activeIndex = 0;
 
-const toggle = () => {
-  toggled = !toggled;
+const slides = document.getElementsByTagName('article');
 
-  document.body.classList.toggle('toggled');
-};
+const handleLeftClick = () => {
+  const nextIndex = activeIndex - 1 >= 0 ? activeIndex - 1 : slides.length - 1;
 
-const handleOnClick = (index) => {
-  toggle();
+  const currentSlide = document.querySelector(`[data-index="${activeIndex}"]`),
+    nextSlide = document.querySelector(`[data-index="${nextIndex}"]`);
 
-  anime({
-    targets: '.tile',
-    opacity: toggled ? 0 : 1,
-    delay: anime.stagger(50, {
-      grid: [columns, rows],
-      from: index,
-    }),
+  currentSlide.dataset.status = 'after';
+
+  nextSlide.dataset.status = 'becoming-active-from-before';
+
+  setTimeout(() => {
+    nextSlide.dataset.status = 'active';
+    activeIndex = nextIndex;
   });
 };
 
-const createTile = (index) => {
-  const tile = document.createElement('div');
+const handleRightClick = () => {
+  const nextIndex = activeIndex + 1 <= slides.length - 1 ? activeIndex + 1 : 0;
 
-  tile.classList.add('tile');
+  const currentSlide = document.querySelector(`[data-index="${activeIndex}"]`),
+    nextSlide = document.querySelector(`[data-index="${nextIndex}"]`);
 
-  tile.style.opacity = toggled ? 0 : 1;
+  currentSlide.dataset.status = 'before';
 
-  tile.onclick = (e) => handleOnClick(index);
+  nextSlide.dataset.status = 'becoming-active-from-after';
 
-  return tile;
-};
-
-const createTiles = (quantity) => {
-  Array.from(Array(quantity)).map((tile, index) => {
-    wrapper.appendChild(createTile(index));
+  setTimeout(() => {
+    nextSlide.dataset.status = 'active';
+    activeIndex = nextIndex;
   });
 };
 
-const createGrid = () => {
-  wrapper.innerHTML = '';
+/* -- Mobile Nav Toggle -- */
 
-  const size = document.body.clientWidth > 800 ? 100 : 50;
+const nav = document.querySelector('nav');
 
-  columns = Math.floor(document.body.clientWidth / size);
-  rows = Math.floor(document.body.clientHeight / size);
+const handleNavToggle = () => {
+  nav.dataset.transitionable = 'true';
 
-  wrapper.style.setProperty('--columns', columns);
-  wrapper.style.setProperty('--rows', rows);
-
-  createTiles(columns * rows);
+  nav.dataset.toggled = nav.dataset.toggled === 'true' ? 'false' : 'true';
 };
 
-createGrid();
+window.matchMedia('(max-width: 800px)').onchange = (e) => {
+  nav.dataset.transitionable = 'false';
 
-window.onresize = () => createGrid();
+  nav.dataset.toggled = 'false';
+};
