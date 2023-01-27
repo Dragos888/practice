@@ -1,53 +1,52 @@
-/* -- Carousel Navigation -- */
+const track = document.getElementById('image-track');
 
-let activeIndex = 0;
+const handleOnDown = (e) => (track.dataset.mouseDownAt = e.clientX);
 
-const slides = document.getElementsByTagName('article');
-
-const handleLeftClick = () => {
-  const nextIndex = activeIndex - 1 >= 0 ? activeIndex - 1 : slides.length - 1;
-
-  const currentSlide = document.querySelector(`[data-index="${activeIndex}"]`),
-    nextSlide = document.querySelector(`[data-index="${nextIndex}"]`);
-
-  currentSlide.dataset.status = 'after';
-
-  nextSlide.dataset.status = 'becoming-active-from-before';
-
-  setTimeout(() => {
-    nextSlide.dataset.status = 'active';
-    activeIndex = nextIndex;
-  });
+const handleOnUp = () => {
+  track.dataset.mouseDownAt = '0';
+  track.dataset.prevPercentage = track.dataset.percentage;
 };
 
-const handleRightClick = () => {
-  const nextIndex = activeIndex + 1 <= slides.length - 1 ? activeIndex + 1 : 0;
+const handleOnMove = (e) => {
+  if (track.dataset.mouseDownAt === '0') return;
 
-  const currentSlide = document.querySelector(`[data-index="${activeIndex}"]`),
-    nextSlide = document.querySelector(`[data-index="${nextIndex}"]`);
+  const mouseDelta = parseFloat(track.dataset.mouseDownAt) - e.clientX,
+    maxDelta = window.innerWidth / 2;
 
-  currentSlide.dataset.status = 'before';
+  const percentage = (mouseDelta / maxDelta) * -100,
+    nextPercentageUnconstrained =
+      parseFloat(track.dataset.prevPercentage) + percentage,
+    nextPercentage = Math.max(Math.min(nextPercentageUnconstrained, 0), -100);
 
-  nextSlide.dataset.status = 'becoming-active-from-after';
+  track.dataset.percentage = nextPercentage;
 
-  setTimeout(() => {
-    nextSlide.dataset.status = 'active';
-    activeIndex = nextIndex;
-  });
+  track.animate(
+    {
+      transform: `translate(${nextPercentage}%, -50%)`,
+    },
+    { duration: 1200, fill: 'forwards' }
+  );
+
+  for (const image of track.getElementsByClassName('image')) {
+    image.animate(
+      {
+        objectPosition: `${100 + nextPercentage}% center`,
+      },
+      { duration: 1200, fill: 'forwards' }
+    );
+  }
 };
 
-/* -- Mobile Nav Toggle -- */
+/* -- Had to add extra lines for touch events -- */
 
-const nav = document.querySelector('nav');
+window.onmousedown = (e) => handleOnDown(e);
 
-const handleNavToggle = () => {
-  nav.dataset.transitionable = 'true';
+window.ontouchstart = (e) => handleOnDown(e.touches[0]);
 
-  nav.dataset.toggled = nav.dataset.toggled === 'true' ? 'false' : 'true';
-};
+window.onmouseup = (e) => handleOnUp(e);
 
-window.matchMedia('(max-width: 800px)').onchange = (e) => {
-  nav.dataset.transitionable = 'false';
+window.ontouchend = (e) => handleOnUp(e.touches[0]);
 
-  nav.dataset.toggled = 'false';
-};
+window.onmousemove = (e) => handleOnMove(e);
+
+window.ontouchmove = (e) => handleOnMove(e.touches[0]);
